@@ -1,25 +1,25 @@
-x = "awesome"
+# x = "awesome"
 
-def myfunc():
-  global x
-  x = "fantastic"
+# def myfunc():
+#   global x
+#   x = "fantastic"
 
-myfunc()
+# myfunc()
 
-print("Python is " + x)
+# print("Python is " + x)
 
-# x=y=z="me","you","us"
-# print(x)
-# print(y)
+# # x=y=z="me","you","us"
+# # print(x)
+# # print(y)
 
 
-# a = 'Hello'
-# b = 'World'
-# print(a , b)
+# # a = 'Hello'
+# # b = 'World'
+# # print(a , b)
 
-# name="kami"
+# # name="kami"
 
-# def printname():
-#     print("my name is",name)
+# # def printname():
+# #     print("my name is",name)
 
-# printname()
+# # printname()

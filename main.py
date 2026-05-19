@@ -1,30 +1,43 @@
-from sqlalchemy import create_engine, column, Integer, String
-from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, Column, Integer, String
+from pydantic import BaseModel
+from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.orm import declarative_base
+from fastapi import FastAPI, Depends
 
-from fastapi import fastAPI
-
-app * fastAPI()
+app = FastAPI()
 
 DATABASE_URL = "sqlite:///./test.db"
 
-engine= create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-
-SessionLocal= sessionmaker(autocommit = False, autoflush=False, bind=engine)
-
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-class User (Base):
+# ── SQLAlchemy model (database table) ──────────────────────
+class User(Base):
     __tablename__ = "users"
 
-    id = column(Integer, primary_key=True, index=True)
-    name = column(String, index=True)
-    email =column (String, unique = True, index=True)
+    id    = Column(Integer, primary_key=True, index=True)
+    name  = Column(String, index=True)
+    email = Column(String, unique=True, index=True)
 
 Base.metadata.create_all(bind=engine)
 
-from sqlalchemy.orm import Session
+# ── Pydantic models (API shapes) ───────────────────────────
+class UserCreate(BaseModel):
+    """What the client sends IN"""
+    name: str
+    email: str
 
+class UserResponse(BaseModel):
+    """What the API sends back OUT"""
+    id: int
+    name: str
+    email: str
+
+    class Config:
+        from_attributes = True  # allows reading SQLAlchemy objects
+
+# ── Database dependency ────────────────────────────────────
 def get_db():
     db = SessionLocal()
     try:
@@ -32,7 +45,11 @@ def get_db():
     finally:
         db.close()
 
-@app.post ("/users", response_model=User)
-def create_user(user: UserCreate, db:Session=Depands(get_db))
-
-
+# ── Route ──────────────────────────────────────────────────
+@app.post("/users/", response_model=UserResponse)  # ← UserResponse, not User
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    db_user = User(name=user.name, email=user.email)
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
