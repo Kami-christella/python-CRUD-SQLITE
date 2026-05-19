@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.orm import declarative_base
 from fastapi import FastAPI, Depends,HTTPException
+from typing import List,Optional
 
 app = FastAPI()
 
@@ -54,7 +55,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(db_user)
     return db_user
 
-@app.get("/users/", response_model=list[UserResponse])
+@app.get("/users/", response_model=List[UserResponse])
 def read_users (skip: int =0, limit: int=10, db: Session = Depends (get_db)):
     users  = db.query(User).offset(skip).limit(limit).all()
     return users
@@ -65,5 +66,18 @@ def read_user (user_id: int, db:Session = Depends(get_db)):
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+class UserUpdate (BaseModel):
+    name: Optional[str] =None
+    email: Optional[str]=None
     
-    
+@app.put("/users/{user_id}", response_model=UserResponse)
+def update_user(user_id:int, user:UserUpdate, db: Session = Depends(get_db)):
+    db_user =db.query(User).filter(User.id == user_id).first()
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    db_user.name = user.name if user.name is not None else db_user.name
+    db_user.email = user.email if user.email is not None else db_user.email
+    db.commit()
+    db.refresh(db_user)
+    return db_user
